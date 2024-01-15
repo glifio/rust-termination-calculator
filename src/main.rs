@@ -6,7 +6,7 @@ use rust_termination_calculator::terminate_sectors;
 #[command(author, version, about, long_about = None)]
 struct Args {
     #[arg(long)]
-    epoch: String,
+    epoch: i64,
 
     #[arg(long)]
     sector_size: String,
@@ -24,10 +24,10 @@ struct Args {
     reward_velocity: String,
 
     #[arg(long)]
-    activation: String,
+    activation: i64,
 
     #[arg(long)]
-    expiration: String,
+    expiration: i64,
 
     #[arg(long)]
     deal_weight: String,
@@ -42,7 +42,7 @@ struct Args {
     expected_storage_pledge: String,
 
     #[arg(long)]
-    power_base_epoch: String,
+    power_base_epoch: i64,
 
     #[arg(long)]
     replaced_day_reward: String,
@@ -66,5 +66,20 @@ fn main() {
     println!("Power Base Epoch: {}", args.power_base_epoch);
     println!("Replaced Day Reward: {}", args.replaced_day_reward);
 
-    terminate_sectors();
+    terminate_sectors(
+        epoch,
+        sector_size,
+        qap_position,
+        qap_velocity,
+        reward_position,
+        reward_velocity,
+        activation,
+        expiration,
+        deal_weight,
+        verified_deal_weight,
+        expected_day_reward,
+        expected_storage_pledge,
+        power_base_epoch,
+        replaced_day_reward
+    );
 }
