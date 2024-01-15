@@ -24,6 +24,10 @@ cargo run -- \
 16871186150637184
 ```
 
+# See also
+
+* https://github.com/jimpick/go-termination-calculator/
+
 # License
 
 Apache 2
