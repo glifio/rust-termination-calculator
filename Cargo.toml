@@ -12,6 +12,7 @@ clap = { version = "4.4.16", features = ["derive"] }
 fil_actors_runtime = "9.0.1"
 fvm_ipld_encoding = "0.4.0"
 fvm_shared = "~4.0"
+lazy_static = "1.4.0"
 num-bigint = "0.4.4"
 num-traits = "0.2.17"
 serde = { version = "1.0.136", features = ["derive"] }

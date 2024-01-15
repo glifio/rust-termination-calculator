@@ -1,21 +1,23 @@
 use std::cmp;
 
+use cid::Cid;
+use fil_actors_runtime::DealWeight;
+use fvm_shared::bigint::{BigInt, Integer};
 use fvm_shared::clock::ChainEpoch;
 use fvm_shared::clock::EPOCH_DURATION_SECONDS;
 use fvm_shared::econ::TokenAmount;
 use fvm_shared::math::PRECISION;
 use fvm_shared::sector::StoragePower;
+use fvm_shared::sector::{RegisteredSealProof, SectorNumber, SectorQuality, SectorSize};
 use fvm_shared::smooth::{self, FilterEstimate};
+use lazy_static::lazy_static;
 use num_traits::Zero;
-use cid::Cid;
-use fvm_shared::sector::{RegisteredSealProof, SectorNumber};
-use num_bigint::BigInt;
 
 mod types;
 
 pub fn terminate_sectors(
     epoch: i64,
-    sector_size: String,
+    sector_size: SectorSize,
     qap_position: BigInt,
     qap_velocity: BigInt,
     reward_position: BigInt,
@@ -27,10 +29,19 @@ pub fn terminate_sectors(
     expected_day_reward: BigInt,
     expected_storage_pledge: BigInt,
     power_base_epoch: i64,
-    replaced_day_reward: BigInt
+    replaced_day_reward: BigInt,
 ) -> TokenAmount {
-    println!("Jim1");
-    let sector = types::SectorOnChainInfo {
+    let network_qa_power_estimate = &FilterEstimate {
+        position: qap_position,
+        velocity: qap_velocity,
+    };
+
+    let reward_estimate = &FilterEstimate {
+        position: reward_position,
+        velocity: reward_velocity,
+    };
+
+    let sector = &types::SectorOnChainInfo {
         sector_number: SectorNumber::default(),
         seal_proof: RegisteredSealProof::StackedDRG32GiBV1P1,
         sealed_cid: Cid::default(),
@@ -49,6 +60,8 @@ pub fn terminate_sectors(
     };
 
     let current_epoch = epoch;
+
+    let sector_power = qa_power_for_sector(sector_size, sector);
 
     return pledge_penalty_for_termination(
         &sector.expected_day_reward,
@@ -78,6 +91,71 @@ const TERMINATION_PENALTY_LOWER_BOUND_PROJECTIONS_PERIOD: ChainEpoch = (EPOCHS_I
 
 pub const TERMINATION_REWARD_FACTOR_NUM: u32 = 1;
 pub const TERMINATION_REWARD_FACTOR_DENOM: u32 = 2;
+
+/// Precision used for making QA power calculations
+pub const SECTOR_QUALITY_PRECISION: i64 = 20;
+
+lazy_static! {
+    /// Quality multiplier for committed capacity (no deals) in a sector
+    pub static ref QUALITY_BASE_MULTIPLIER: BigInt = BigInt::from(10);
+
+    /// Quality multiplier for unverified deals in a sector
+    pub static ref DEAL_WEIGHT_MULTIPLIER: BigInt = BigInt::from(10);
+
+    /// Quality multiplier for verified deals in a sector
+    pub static ref VERIFIED_DEAL_WEIGHT_MULTIPLIER: BigInt = BigInt::from(100);
+}
+
+/// DealWeight and VerifiedDealWeight are spacetime occupied by regular deals and verified deals in a sector.
+/// Sum of DealWeight and VerifiedDealWeight should be less than or equal to total SpaceTime of a sector.
+/// Sectors full of VerifiedDeals will have a SectorQuality of VerifiedDealWeightMultiplier/QualityBaseMultiplier.
+/// Sectors full of Deals will have a SectorQuality of DealWeightMultiplier/QualityBaseMultiplier.
+/// Sectors with neither will have a SectorQuality of QualityBaseMultiplier/QualityBaseMultiplier.
+/// SectorQuality of a sector is a weighted average of multipliers based on their proportions.
+pub fn quality_for_weight(
+    size: SectorSize,
+    duration: ChainEpoch,
+    deal_weight: &DealWeight,
+    verified_weight: &DealWeight,
+) -> SectorQuality {
+    let sector_space_time = BigInt::from(size as u64) * BigInt::from(duration);
+    let total_deal_space_time = deal_weight + verified_weight;
+
+    let weighted_base_space_time =
+        (&sector_space_time - total_deal_space_time) * &*QUALITY_BASE_MULTIPLIER;
+    let weighted_deal_space_time = deal_weight * &*DEAL_WEIGHT_MULTIPLIER;
+    let weighted_verified_space_time = verified_weight * &*VERIFIED_DEAL_WEIGHT_MULTIPLIER;
+    let weighted_sum_space_time =
+        weighted_base_space_time + weighted_deal_space_time + weighted_verified_space_time;
+    let scaled_up_weighted_sum_space_time: SectorQuality =
+        weighted_sum_space_time << SECTOR_QUALITY_PRECISION;
+
+    scaled_up_weighted_sum_space_time
+        .div_floor(&sector_space_time)
+        .div_floor(&QUALITY_BASE_MULTIPLIER)
+}
+
+/// Returns the power for a sector size and weight.
+pub fn qa_power_for_weight(
+    size: SectorSize,
+    duration: ChainEpoch,
+    deal_weight: &DealWeight,
+    verified_weight: &DealWeight,
+) -> StoragePower {
+    let quality = quality_for_weight(size, duration, deal_weight, verified_weight);
+    (BigInt::from(size as u64) * quality) >> SECTOR_QUALITY_PRECISION
+}
+
+/// Returns the quality-adjusted power for a sector.
+pub fn qa_power_for_sector(size: SectorSize, sector: &types::SectorOnChainInfo) -> StoragePower {
+    let duration = sector.expiration - sector.power_base_epoch;
+    qa_power_for_weight(
+        size,
+        duration,
+        &sector.deal_weight,
+        &sector.verified_deal_weight,
+    )
+}
 
 /// Penalty to locked pledge collateral for the termination of a sector before scheduled expiry.
 /// SectorAge is the time between the sector's activation and termination.

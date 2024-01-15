@@ -1,5 +1,7 @@
 use clap::Parser;
 use rust_termination_calculator::terminate_sectors;
+use num_bigint::BigInt;
+use fvm_shared::sector::SectorSize;
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -9,19 +11,19 @@ struct Args {
     epoch: i64,
 
     #[arg(long)]
-    sector_size: String,
+    sector_size: i64,
 
     #[arg(long)]
-    qap_position: String,
+    qap_position: BigInt,
 
     #[arg(long)]
-    qap_velocity: String,
+    qap_velocity: BigInt,
 
     #[arg(long)]
-    reward_position: String,
+    reward_position: BigInt,
 
     #[arg(long)]
-    reward_velocity: String,
+    reward_velocity: BigInt,
 
     #[arg(long)]
     activation: i64,
@@ -30,56 +32,48 @@ struct Args {
     expiration: i64,
 
     #[arg(long)]
-    deal_weight: String,
+    deal_weight: BigInt,
 
     #[arg(long)]
-    verified_deal_weight: String,
+    verified_deal_weight: BigInt,
 
     #[arg(long)]
-    expected_day_reward: String,
+    expected_day_reward: BigInt,
 
     #[arg(long)]
-    expected_storage_pledge: String,
+    expected_storage_pledge: BigInt,
 
     #[arg(long)]
     power_base_epoch: i64,
 
     #[arg(long)]
-    replaced_day_reward: String,
+    replaced_day_reward: BigInt,
 }
 
 fn main() {
     let args = Args::parse();
 
-    println!("Epoch: {}", args.epoch);
-    println!("Sector Size: {}", args.sector_size);
-    println!("QAP Position: {}", args.qap_position);
-    println!("QAP Velocity: {}", args.qap_velocity);
-    println!("Reward Position: {}", args.reward_position);
-    println!("Reward Velocity: {}", args.reward_velocity);
-    println!("Activation: {}", args.activation);
-    println!("Expiration: {}", args.expiration);
-    println!("Deal Weight: {}", args.deal_weight);
-    println!("Verified Deal Weight: {}", args.verified_deal_weight);
-    println!("Expected Day Reward: {}", args.expected_day_reward);
-    println!("Expected Storage Pledge: {}", args.expected_storage_pledge);
-    println!("Power Base Epoch: {}", args.power_base_epoch);
-    println!("Replaced Day Reward: {}", args.replaced_day_reward);
+    let sector_size = match args.sector_size {
+        32 => SectorSize::_32GiB,
+        64 => SectorSize::_64GiB,
+        _ => panic!("Unknown sector size")
+    };
 
-    terminate_sectors(
-        epoch,
+    let fee = terminate_sectors(
+        args.epoch,
         sector_size,
-        qap_position,
-        qap_velocity,
-        reward_position,
-        reward_velocity,
-        activation,
-        expiration,
-        deal_weight,
-        verified_deal_weight,
-        expected_day_reward,
-        expected_storage_pledge,
-        power_base_epoch,
-        replaced_day_reward
+        args.qap_position,
+        args.qap_velocity,
+        args.reward_position,
+        args.reward_velocity,
+        args.activation,
+        args.expiration,
+        args.deal_weight,
+        args.verified_deal_weight,
+        args.expected_day_reward,
+        args.expected_storage_pledge,
+        args.power_base_epoch,
+        args.replaced_day_reward
     );
+    println!("{}", fee.atto());
 }

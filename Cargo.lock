@@ -944,6 +944,7 @@ dependencies = [
  "fil_actors_runtime",
  "fvm_ipld_encoding 0.4.0",
  "fvm_shared 4.0.0",
+ "lazy_static",
  "num-bigint",
  "num-traits",
  "serde",
