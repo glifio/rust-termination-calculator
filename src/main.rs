@@ -1,4 +1,5 @@
 use clap::Parser;
+use rust_termination_calculator::terminate_sectors;
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -64,4 +65,6 @@ fn main() {
     println!("Expected Storage Pledge: {}", args.expected_storage_pledge);
     println!("Power Base Epoch: {}", args.power_base_epoch);
     println!("Replaced Day Reward: {}", args.replaced_day_reward);
+
+    terminate_sectors();
 }
