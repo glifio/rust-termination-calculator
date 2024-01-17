@@ -1,7 +1,7 @@
 #! /bin/bash
 
 MINER=f0141634
-EPOCH=3571596
+EPOCH=3573724
 SECTOR=46158
 
 # Off-chain:

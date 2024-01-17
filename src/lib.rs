@@ -1,6 +1,6 @@
 use std::cmp;
 
-use cid::Cid;
+// use cid::Cid;
 use fil_actors_runtime::DealWeight;
 use fvm_shared::bigint::{BigInt, Integer};
 use fvm_shared::clock::ChainEpoch;
@@ -8,7 +8,8 @@ use fvm_shared::clock::EPOCH_DURATION_SECONDS;
 use fvm_shared::econ::TokenAmount;
 use fvm_shared::math::PRECISION;
 use fvm_shared::sector::StoragePower;
-use fvm_shared::sector::{RegisteredSealProof, SectorNumber, SectorQuality, SectorSize};
+// use fvm_shared::sector::{RegisteredSealProof, SectorNumber, SectorQuality, SectorSize};
+use fvm_shared::sector::{SectorQuality, SectorSize};
 use fvm_shared::smooth::{self, FilterEstimate};
 use lazy_static::lazy_static;
 use num_traits::Zero;
@@ -42,21 +43,21 @@ pub fn terminate_sectors(
     };
 
     let sector = &types::SectorOnChainInfo {
-        sector_number: SectorNumber::default(),
-        seal_proof: RegisteredSealProof::StackedDRG32GiBV1P1,
-        sealed_cid: Cid::default(),
-        deal_ids: Vec::new(),
+        // sector_number: SectorNumber::default(),
+        // seal_proof: RegisteredSealProof::StackedDRG32GiBV1P1,
+        // sealed_cid: Cid::default(),
+        // deal_ids: Vec::new(),
         activation: activation,
         expiration: expiration,
         deal_weight: deal_weight,
         verified_deal_weight: verified_deal_weight,
-        initial_pledge: TokenAmount::zero(),
+        // initial_pledge: TokenAmount::zero(),
         expected_day_reward: TokenAmount::from_atto(expected_day_reward),
         expected_storage_pledge: TokenAmount::from_atto(expected_storage_pledge),
         power_base_epoch: power_base_epoch,
         replaced_day_reward: TokenAmount::from_atto(replaced_day_reward),
-        sector_key_cid: None,
-        flags: types::SectorOnChainInfoFlags::empty(),
+        // sector_key_cid: None,
+        // flags: types::SectorOnChainInfoFlags::empty(),
     };
 
     let current_epoch = epoch;
