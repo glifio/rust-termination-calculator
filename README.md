@@ -26,7 +26,7 @@ cargo run -- \
 
 # See also
 
-* https://github.com/jimpick/go-termination-calculator
+* https://github.com/glifio/go-termination-calculator
 
 # License
 
